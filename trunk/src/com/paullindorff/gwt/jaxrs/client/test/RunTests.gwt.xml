@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<module rename-to="runtests">
+  <inherits name='com.google.gwt.user.User'/>
+  <inherits name='com.google.gwt.user.theme.standard.Standard'/>
+  <inherits name="com.paullindorff.gwt.jaxrs.gwt-jaxrs-proxy" />
+  <entry-point class="com.paullindorff.gwt.jaxrs.client.test.ui.RunTests" />
+  <source path='ui'/>
+</module>

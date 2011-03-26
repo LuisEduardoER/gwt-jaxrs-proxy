@@ -1,0 +1,236 @@
+<!DOCTYPE ui:UiBinder SYSTEM "http://dl.google.com/gwt/DTD/xhtml.ent">
+<ui:UiBinder xmlns:ui="urn:ui:com.google.gwt.uibinder"
+	xmlns:g="urn:import:com.google.gwt.user.client.ui">
+
+	<ui:style type='com.paullindorff.gwt.jaxrs.client.test.ui.WebTestResults.ResultsStyle'>
+		.pass { color: green; }
+		.fail { color: red; }
+	</ui:style>
+
+	<g:Grid>
+		<g:row>
+			<g:customCell>
+				<g:Label ui:field="testIsObjectResultLabel">testIsObject</g:Label>
+			</g:customCell>
+			<g:customCell>
+				<g:Label ui:field="testIsObjectMessageLabel"></g:Label>
+			</g:customCell>
+		</g:row>
+		<g:row>
+			<g:customCell>
+				<g:Label ui:field="testIsArrayResultLabel">testIsArray</g:Label>
+			</g:customCell>
+			<g:customCell>
+				<g:Label ui:field="testIsArrayMessageLabel"></g:Label>
+			</g:customCell>
+		</g:row>
+		<g:row>
+			<g:customCell>
+				<g:Label ui:field="testIsNumberResultLabel">testIsNumber</g:Label>
+			</g:customCell>
+			<g:customCell>
+				<g:Label ui:field="testIsNumberMessageLabel"></g:Label>
+			</g:customCell>
+		</g:row>
+		<g:row>
+			<g:customCell>
+				<g:Label ui:field="testContainsAttributeResultLabel">testContainsAttribute</g:Label>
+			</g:customCell>
+			<g:customCell>
+				<g:Label ui:field="testContainsAttributeMessageLabel"></g:Label>
+			</g:customCell>
+		</g:row>
+		<g:row>
+			<g:customCell>
+				<g:Label ui:field="testClassifyAttributeResultLabel">testClassifyAttribute</g:Label>
+			</g:customCell>
+			<g:customCell>
+				<g:Label ui:field="testClassifyAttributeMessageLabel"></g:Label>
+			</g:customCell>
+		</g:row>
+		<g:row>
+			<g:customCell>
+				<g:Label ui:field="testGetKeySetResultLabel">testGetKeySet</g:Label>
+			</g:customCell>
+			<g:customCell>
+				<g:Label ui:field="testGetKeySetMessageLabel"></g:Label>
+			</g:customCell>
+		</g:row>
+		<g:row>
+			<g:customCell>
+				<g:Label ui:field="testCreateWithNoContentResultLabel">testCreateWithNoContent</g:Label>
+			</g:customCell>
+			<g:customCell>
+				<g:Label ui:field="testCreateWithNoContentMessageLabel"></g:Label>
+			</g:customCell>
+		</g:row>
+		<g:row>
+			<g:customCell>
+				<g:Label ui:field="testCreateWithPartialContentResultLabel">testCreateWithPartialContent</g:Label>
+			</g:customCell>
+			<g:customCell>
+				<g:Label ui:field="testCreateWithPartialContentMessageLabel"></g:Label>
+			</g:customCell>
+		</g:row>
+		<g:row>
+			<g:customCell>
+				<g:Label ui:field="testCreateWithSimpleContentResultLabel">testCreateWithSimpleContent</g:Label>
+			</g:customCell>
+			<g:customCell>
+				<g:Label ui:field="testCreateWithSimpleContentMessageLabel"></g:Label>
+			</g:customCell>
+		</g:row>
+		<g:row>
+			<g:customCell>
+				<g:Label ui:field="testCreateWithArrayContentResultLabel">testCreateWithArrayContent</g:Label>
+			</g:customCell>
+			<g:customCell>
+				<g:Label ui:field="testCreateWithArrayContentMessageLabel"></g:Label>
+			</g:customCell>
+		</g:row>
+		<g:row>
+			<g:customCell>
+				<g:Label ui:field="testCreateWithObjectContentResultLabel">testCreateWithObjectContent</g:Label>
+			</g:customCell>
+			<g:customCell>
+				<g:Label ui:field="testCreateWithObjectContentMessageLabel"></g:Label>
+			</g:customCell>
+		</g:row>
+		<g:row>
+			<g:customCell>
+				<g:Label ui:field="testPrimitiveValuesPresentResultLabel">testPrimitiveValuesPresent</g:Label>
+			</g:customCell>
+			<g:customCell>
+				<g:Label ui:field="testPrimitiveValuesPresentMessageLabel"></g:Label>
+			</g:customCell>
+		</g:row>
+		<g:row>
+			<g:customCell>
+				<g:Label ui:field="testPrimitiveValuesNotPresentExceptionResultLabel">testPrimitiveValuesNotPresentException</g:Label>
+			</g:customCell>
+			<g:customCell>
+				<g:Label ui:field="testPrimitiveValuesNotPresentExceptionMessageLabel"></g:Label>
+			</g:customCell>
+		</g:row>
+		<g:row>
+			<g:customCell>
+				<g:Label ui:field="testWrapperValuesPresentResultLabel">testWrapperValuesPresent</g:Label>
+			</g:customCell>
+			<g:customCell>
+				<g:Label ui:field="testWrapperValuesPresentMessageLabel"></g:Label>
+			</g:customCell>
+		</g:row>
+		<g:row>
+			<g:customCell>
+				<g:Label ui:field="testWrapperValuesNotPresentNullResultLabel">testWrapperValuesNotPresentNull</g:Label>
+			</g:customCell>
+			<g:customCell>
+				<g:Label ui:field="testWrapperValuesNotPresentNullMessageLabel"></g:Label>
+			</g:customCell>
+		</g:row>
+		<g:row>
+			<g:customCell>
+				<g:Label ui:field="testObjectPresentResultLabel">testObjectPresent</g:Label>
+			</g:customCell>
+			<g:customCell>
+				<g:Label ui:field="testObjectPresentMessageLabel"></g:Label>
+			</g:customCell>
+		</g:row>
+		<g:row>
+			<g:customCell>
+				<g:Label ui:field="testObjectNotPresentNullResultLabel">testObjectNotPresentNull</g:Label>
+			</g:customCell>
+			<g:customCell>
+				<g:Label ui:field="testObjectNotPresentNullMessageLabel"></g:Label>
+			</g:customCell>
+		</g:row>
+		<g:row>
+			<g:customCell>
+				<g:Label ui:field="testAttributeNotAnObjectNullResultLabel">testAttributeNotAnObjectNull</g:Label>
+			</g:customCell>
+			<g:customCell>
+				<g:Label ui:field="testAttributeNotAnObjectNullMessageLabel"></g:Label>
+			</g:customCell>
+		</g:row>
+		<g:row>
+			<g:customCell>
+				<g:Label ui:field="testArrayPresentResultLabel">testArrayPresent</g:Label>
+			</g:customCell>
+			<g:customCell>
+				<g:Label ui:field="testArrayPresentMessageLabel"></g:Label>
+			</g:customCell>
+		</g:row>
+		<g:row>
+			<g:customCell>
+				<g:Label ui:field="testArrayNotPresentNullResultLabel">testArrayNotPresentNull</g:Label>
+			</g:customCell>
+			<g:customCell>
+				<g:Label ui:field="testArrayNotPresentNullMessageLabel"></g:Label>
+			</g:customCell>
+		</g:row>
+		<g:row>
+			<g:customCell>
+				<g:Label ui:field="testSingleValueArrayResultLabel">testSingleValueArray</g:Label>
+			</g:customCell>
+			<g:customCell>
+				<g:Label ui:field="testSingleValueArrayMessageLabel"></g:Label>
+			</g:customCell>
+		</g:row>
+		<g:row>
+			<g:customCell>
+				<g:Label ui:field="testAttributeNotAnArrayResultLabel">testAttributeNotAnArray</g:Label>
+			</g:customCell>
+			<g:customCell>
+				<g:Label ui:field="testAttributeNotAnArrayMessageLabel"></g:Label>
+			</g:customCell>
+		</g:row>
+		<g:row>
+			<g:customCell>
+				<g:Label ui:field="testNumberArrayPresentResultLabel">testNumberArrayPresent</g:Label>
+			</g:customCell>
+			<g:customCell>
+				<g:Label ui:field="testNumberArrayPresentMessageLabel"></g:Label>
+			</g:customCell>
+		</g:row>
+		<g:row>
+			<g:customCell>
+				<g:Label ui:field="testNumberArrayNotPresentNullResultLabel">testNumberArrayNotPresentNull</g:Label>
+			</g:customCell>
+			<g:customCell>
+				<g:Label ui:field="testNumberArrayNotPresentNullMessageLabel"></g:Label>
+			</g:customCell>
+		</g:row>
+		<g:row>
+			<g:customCell>
+				<g:Label ui:field="testEmbeddedObjectPresentResultLabel">testEmbeddedObjectPresent</g:Label>
+			</g:customCell>
+			<g:customCell>
+				<g:Label ui:field="testEmbeddedObjectPresentMessageLabel"></g:Label>
+			</g:customCell>
+		</g:row>
+		<g:row>
+			<g:customCell>
+				<g:Label ui:field="testEmbeddedObjectNotPresentNullResultLabel">testEmbeddedObjectNotPresentNull</g:Label>
+			</g:customCell>
+			<g:customCell>
+				<g:Label ui:field="testEmbeddedObjectNotPresentNullMessageLabel"></g:Label>
+			</g:customCell>
+		</g:row>
+		<g:row>
+			<g:customCell>
+				<g:Label ui:field="testCollectionResultLabel">testCollection</g:Label>
+			</g:customCell>
+			<g:customCell>
+				<g:Label ui:field="testCollectionMessageLabel"></g:Label>
+			</g:customCell>
+		</g:row>
+		<g:row>
+			<g:customCell>
+				<g:Label ui:field="testToJSONResultLabel">testToJSON</g:Label>
+			</g:customCell>
+			<g:customCell>
+				<g:Label ui:field="testToJSONMessageLabel"></g:Label>
+			</g:customCell>
+		</g:row>
+	</g:Grid>
+</ui:UiBinder> 

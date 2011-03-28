@@ -1,2 +1,0 @@
-# Module com.igrid.gwt.jaxrs.client.test.RunTests.JUnit
-# RPC service class, partial path of RPC policy file

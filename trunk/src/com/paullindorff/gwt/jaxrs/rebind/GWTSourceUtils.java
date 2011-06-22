@@ -1,5 +1,8 @@
 package com.paullindorff.gwt.jaxrs.rebind;
 
+import javax.ws.rs.core.Context;
+
+import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.typeinfo.JArrayType;
 import com.google.gwt.core.ext.typeinfo.JClassType;
 import com.google.gwt.core.ext.typeinfo.JMethod;
@@ -14,19 +17,24 @@ import com.google.gwt.core.ext.typeinfo.JType;
  */
 public class GWTSourceUtils {
 	/**
-	 * <b>NOTE: from com.google.gwt.user.rebind.rpc.RemoteServiceAsyncValidator</b>, v1.6
+	 * <b>NOTE: from com.google.gwt.user.rebind.rpc.RemoteServiceAsyncValidator</b>, v1.6,
+	  modified to skip parameters with the JAX-RS Context annotation
 	 * @param method
 	 * @return
 	 */
-	public static String computeInternalSignature(JMethod method) {
+	public static String computeInternalSignature(JMethod method, TreeLogger logger) {
 		StringBuffer sb = new StringBuffer();
 		sb.setLength(0);
 		sb.append(method.getName());
 		JParameter[] params = method.getParameters();
 		for (JParameter param : params) {
-			sb.append("/");
-			JType paramType = param.getType();
-			sb.append(paramType.getErasedType().getQualifiedSourceName());
+			if (param.isAnnotationPresent(Context.class)) {
+				logger.log(TreeLogger.INFO, "skipping param '" + param.getName() + "': Context annotation found");
+			} else {
+				sb.append("/");
+				JType paramType = param.getType();
+				sb.append(paramType.getErasedType().getQualifiedSourceName());
+			}
 		}
 		return sb.toString();
 	}

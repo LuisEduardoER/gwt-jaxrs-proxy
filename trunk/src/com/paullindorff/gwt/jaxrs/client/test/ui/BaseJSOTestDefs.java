@@ -10,12 +10,34 @@ import com.google.gwt.core.client.JsArrayNumber;
 import com.paullindorff.gwt.jaxrs.client.jso.BaseJSO;
 import com.paullindorff.gwt.jaxrs.client.jso.UndefinedJavaScriptAttributeException;
 
+@SuppressWarnings("unchecked")
 public class BaseJSOTestDefs {
 	
 	private static final double FLOAT_FUDGE = 0.00001;
 	public static final String TEST_MODULE_NAME = "com.paullindorff.gwt.jaxrs.client.test.RunTests";
 
 	//TODO: standard minimal set of JSON objects
+
+	public TestResult testRemoveMapWrapper() {
+		String oneEntrySingle = "{\"data\":{\"entry\":{\"key\":\"A\",\"value\":{\"data_points\":{\"data_point\":[1,2,3,4,5,6,7]},\"attr1\":520.97,\"attr2\":1174937678981}}}}";
+		String multipleEntrySingle = "{\"data1\":{\"entry\":{\"key\":\"A\",\"value\":{\"data_points\":{\"data_point\":[1,2,3,4,5,6,7]},\"attr1\":520.97,\"attr2\":1174937678981}}},\"data2\":{\"entry\":{\"key\":\"A\",\"value\":{\"data_points\":{\"data_point\":[1,2,3,4,5,6,7]},\"attr1\":520.97,\"attr2\":1174937678981}}}}";
+		String oneEntryArray = "{\"data\":{\"entry\":[{\"key\":\"A\",\"value\":{\"data_points\":{\"data_point\":[1,2,3]},\"interval_micros\":520.97,\"start_time_millis\":1180039965032}},{\"key\":\"B\",\"value\":{\"data_points\":{\"data_point\":[1,2,3]},\"interval_micros\":520.97,\"start_time_millis\":1180039965032}},{\"key\":\"C\",\"value\":{\"data_points\":{\"data_point\":[1,2,3]},\"attr1\":520.97,\"attr2\":1180039965032}}]}}";
+		String multipleEntryArray = "{\"data1\":{\"entry\":[{\"key\":\"A\",\"value\":{\"data_points\":{\"data_point\":[1,2,3]},\"interval_micros\":520.97,\"start_time_millis\":1180039965032}},{\"key\":\"B\",\"value\":{\"data_points\":{\"data_point\":[1,2,3]},\"interval_micros\":520.97,\"start_time_millis\":1180039965032}},{\"key\":\"C\",\"value\":{\"data_points\":{\"data_point\":[1,2,3]},\"attr1\":520.97,\"attr2\":1180039965032}}]},\"data2\":{\"entry\":[{\"key\":\"A\",\"value\":{\"data_points\":{\"data_point\":[1,2,3]},\"interval_micros\":520.97,\"start_time_millis\":1180039965032}},{\"key\":\"B\",\"value\":{\"data_points\":{\"data_point\":[1,2,3]},\"interval_micros\":520.97,\"start_time_millis\":1180039965032}},{\"key\":\"C\",\"value\":{\"data_points\":{\"data_point\":[1,2,3]},\"attr1\":520.97,\"attr2\":1180039965032}}]}}";
+		String noEntries = "{\"obj\":{\"inner1\":{\"inner2\":{\"inner3\":{\"inner4\":{\"inner5\":\"value\"}}}}}}";
+
+		if (!BaseJSO.removeMapWrapper(oneEntrySingle, "entry").equals("{\"data\":{\"key\":\"A\",\"value\":{\"data_points\":{\"data_point\":[1,2,3,4,5,6,7]},\"attr1\":520.97,\"attr2\":1174937678981}}}"))
+			return failTest("one entry single test failed");
+		if (!BaseJSO.removeMapWrapper(multipleEntrySingle, "entry").equals("{\"data1\":{\"key\":\"A\",\"value\":{\"data_points\":{\"data_point\":[1,2,3,4,5,6,7]},\"attr1\":520.97,\"attr2\":1174937678981}},\"data2\":{\"key\":\"A\",\"value\":{\"data_points\":{\"data_point\":[1,2,3,4,5,6,7]},\"attr1\":520.97,\"attr2\":1174937678981}}}"))
+			return failTest("multiple entry single tests failed");
+		if (!BaseJSO.removeMapWrapper(oneEntryArray, "entry").equals("{\"data\":[{\"key\":\"A\",\"value\":{\"data_points\":{\"data_point\":[1,2,3]},\"interval_micros\":520.97,\"start_time_millis\":1180039965032}},{\"key\":\"B\",\"value\":{\"data_points\":{\"data_point\":[1,2,3]},\"interval_micros\":520.97,\"start_time_millis\":1180039965032}},{\"key\":\"C\",\"value\":{\"data_points\":{\"data_point\":[1,2,3]},\"attr1\":520.97,\"attr2\":1180039965032}}]}"))
+			return failTest("one entry array test failed");
+		if (!BaseJSO.removeMapWrapper(multipleEntryArray, "entry").equals("{\"data1\":[{\"key\":\"A\",\"value\":{\"data_points\":{\"data_point\":[1,2,3]},\"interval_micros\":520.97,\"start_time_millis\":1180039965032}},{\"key\":\"B\",\"value\":{\"data_points\":{\"data_point\":[1,2,3]},\"interval_micros\":520.97,\"start_time_millis\":1180039965032}},{\"key\":\"C\",\"value\":{\"data_points\":{\"data_point\":[1,2,3]},\"attr1\":520.97,\"attr2\":1180039965032}}],\"data2\":[{\"key\":\"A\",\"value\":{\"data_points\":{\"data_point\":[1,2,3]},\"interval_micros\":520.97,\"start_time_millis\":1180039965032}},{\"key\":\"B\",\"value\":{\"data_points\":{\"data_point\":[1,2,3]},\"interval_micros\":520.97,\"start_time_millis\":1180039965032}},{\"key\":\"C\",\"value\":{\"data_points\":{\"data_point\":[1,2,3]},\"attr1\":520.97,\"attr2\":1180039965032}}]}"))
+			return failTest("multiple entry array test failed");
+			if (!BaseJSO.removeMapWrapper(noEntries, "entry").equals(noEntries))
+			return failTest("json with no map wrappers was altered incorrectly");
+
+		return passTest();
+	}
 
 	public TestResult testIsObject() {
 		BaseJSO iut = (BaseJSO)BaseJSO.createObject("{\"notobj1\":5,\"notobj2\":6.0,\"notobj3\":true,\"notobj4\":\"mystring\",\"notobj5\":[1,2,3],\"isobj1\":{\"objval1\":1},\"isobj2\":{},\"nullvalue\":null,\"nanvalue\":NaN,\"infinityvalue\":Infinity}");

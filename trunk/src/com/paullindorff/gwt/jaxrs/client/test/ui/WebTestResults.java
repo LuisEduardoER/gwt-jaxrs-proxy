@@ -20,6 +20,7 @@ public class WebTestResults extends Composite {
 	interface WebTestResultsUiBinder extends UiBinder<Widget, WebTestResults> {}
 
 	@UiField ResultsStyle style;
+	@UiField Label testRemoveMapWrapperResultLabel;
 	@UiField Label testIsObjectResultLabel;
 	@UiField Label testIsArrayResultLabel;
 	@UiField Label testIsNumberResultLabel;
@@ -49,6 +50,7 @@ public class WebTestResults extends Composite {
 	@UiField Label testCollectionResultLabel;
 	@UiField Label testToJSONResultLabel;
 
+	@UiField Label testRemoveMapWrapperMessageLabel;
 	@UiField Label testIsObjectMessageLabel;
 	@UiField Label testIsArrayMessageLabel;
 	@UiField Label testIsNumberMessageLabel;
@@ -82,6 +84,7 @@ public class WebTestResults extends Composite {
 		initWidget(uiBinder.createAndBindUi(this));
 
 		BaseJSOTestDefs tests = new BaseJSOTestDefs();
+		TestResult testRemoveMapWrapperResult = tests.testRemoveMapWrapper();
 		TestResult testIsObjectResult = tests.testIsObject();
 		TestResult testIsArrayResult = tests.testIsArray();
 		TestResult testIsNumberResult = tests.testIsNumber();
@@ -110,7 +113,10 @@ public class WebTestResults extends Composite {
 		TestResult testEmbeddedObjectNotPresentNullResult = tests.testEmbeddedObjectNotPresentNull();
 		TestResult testCollectionResult = tests.testCollection();
 		TestResult testToJSONResult = tests.testToJSON();
-		
+
+		testRemoveMapWrapperResultLabel.addStyleName((testRemoveMapWrapperResult.isPassed() ? style.pass() : style.fail()));
+		testRemoveMapWrapperMessageLabel.setText(testRemoveMapWrapperResult.getMessage());
+
 		testIsObjectResultLabel.addStyleName((testIsObjectResult.isPassed() ? style.pass() : style.fail()));
 		testIsObjectMessageLabel.setText(testIsObjectResult.getMessage());
 

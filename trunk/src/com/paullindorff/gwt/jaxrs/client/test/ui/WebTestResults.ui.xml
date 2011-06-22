@@ -10,6 +10,14 @@
 	<g:Grid>
 		<g:row>
 			<g:customCell>
+				<g:Label ui:field="testRemoveMapWrapperResultLabel">removeMapWrapper</g:Label>
+			</g:customCell>
+			<g:customCell>
+				<g:Label ui:field="testRemoveMapWrapperMessageLabel"></g:Label>
+			</g:customCell>
+		</g:row>
+		<g:row>
+			<g:customCell>
 				<g:Label ui:field="testIsObjectResultLabel">testIsObject</g:Label>
 			</g:customCell>
 			<g:customCell>

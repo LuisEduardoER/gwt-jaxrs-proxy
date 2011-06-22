@@ -1,0 +1,140 @@
+// *** system environment variables
+final javaHome = System.getenv().JAVA_HOME
+final gwtHome = System.getenv().GWT_HOME
+
+//TODO: error if not defined
+
+println "using javaHome: $javaHome"
+println "using gwtHome: $gwtHome"
+
+// *** external directories
+final junitHome = '/Users/plindorff/devtools/junit-4.8.1'
+final junitJar = 'junit-4.8.1.jar'
+
+// *** project directories
+final sourceDirectory = 'src'
+final testsDirectory = 'test'
+final libDirectory = 'lib'
+final outputDirectory = 'war/WEB-INF/classes'
+
+def performCompilation = { sourceDir, outputDir, classpathId ->
+	mkdir ( dir : outputDir )
+	javac ( srcdir : sourceDir, destdir : outputDir, fork : 'true', compiler: 'modern' , debug: 'true', failonerror : 'true', includeantruntime : 'false', source : '1.6', target : '1.6' ) {
+		classpath { path ( refid : classpathId ) }
+	}
+}
+
+// *** targets
+target ( init : '' ) {	// targets with blank descriptions are internal-only, do not appear in the command line directory
+
+	gwtClasspath = 'gwtClasspath'
+	path ( id: gwtClasspath ) {
+		path ( location : "$gwtHome/gwt-user.jar" )
+		fileset ( dir: "$gwtHome", includes: 'gwt-dev*.jar' )
+	}
+
+	junitClasspath = 'junitClasspath'
+	path ( id: junitClasspath ) {
+		path ( location : "$junitHome/$junitJar" )
+	}
+
+	compileClasspath = 'compileClasspath'
+	path ( id: compileClasspath ) {
+		path ( location : sourceDirectory )
+		path ( location : outputDirectory )
+		path ( refid : gwtClasspath )
+
+		fileset ( dir: "war/WEB-INF/lib", includes: '**/*.jar' )
+	}
+
+	testClasspath = 'testClasspath'
+	path ( id: testClasspath ) {
+		path ( location : 'test' )
+		path ( refid : compileClasspath )
+		path ( refid : junitClasspath )
+	}
+}
+
+target ( clean : 'removes existing complied code to facilitate a fresh build' ) {
+	delete ( dir : 'war/WEB-INF/classes', failonerror: 'false' )
+	delete ( dir : 'war/gwt-jaxrs-proxy', failonerror: 'false' )
+}
+
+target ( libs : 'copy libs to WEB-INF/lib' ) {
+	mkdir ( dir: 'war/WEB-INF/lib' )
+	copy ( todir: 'war/WEB-INF/lib', file: "${gwtHome}/gwt-servlet.jar" )
+}
+
+target ( javac : 'compiles java source code' ) {
+	depends ( init )
+
+	copy ( todir : outputDirectory, includeemptydirs : 'false') {
+		fileset ( dir : sourceDirectory, excludes : '**/*.launch, **/*.java')
+	}
+
+	performCompilation ( sourceDirectory, outputDirectory, compileClasspath )
+}
+
+target ( gwtc : 'GWT compile to JavaScript' ) {
+	depends ( libs, javac )
+
+	java ( fork: "true", failonerror: "true", classname: "com.google.gwt.dev.Compiler" ) {
+		classpath { path ( refid : compileClasspath ) }
+		jvmarg (value: '-Xmx256M')
+		arg (value: 'com.paullindorff.gwt.jaxrs.client.test.runtests')
+	}
+}
+
+target ( compileTests : 'compiles unit test code' ) {
+	depends ( init )
+
+	performCompilation ( testsDirectory, outputDirectory, testClasspath )
+}
+
+target ( testDev : 'runs unit tests in development mode' ) {
+	depends ( compileTests )
+
+	mkdir ( dir:'reports/htmlunit.dev' )
+
+	ant.junit ( fork: 'true', printsummary: 'true', haltonfailure: 'true' ) {
+		jvmarg (value: '-Xmx256M')
+		sysproperty ( key: 'gwt.args', value: '-logLevel WARN')
+		sysproperty ( key: 'java.awt.headless', value: 'true')
+		classpath { path (refid: testClasspath) }
+		batchtest ( todir: 'reports/htmlunit.dev' ) {
+			fileset ( dir: 'test', includes: '**/*Test.java' )
+		}
+		formatter ( type: 'plain' )
+		formatter ( type: 'xml' )
+	}
+}
+
+target ( testProd : 'runs unit tests in production mode' ) {
+	depends ( compileTests )
+
+	mkdir ( dir:'reports/htmlunit.prod' )	// 1
+
+	ant.junit ( fork: 'true', printsummary: 'true', haltonfailure: 'true' ) {
+		jvmarg (value: '-Xmx256M')
+		sysproperty ( key: 'gwt.args', value: '-prod -logLevel WARN -out www-test')	// 2
+		sysproperty ( key: 'java.awt.headless', value: 'true')
+		classpath { path (refid: testClasspath) }
+		batchtest ( todir: 'reports/htmlunit.prod' ) { 	// 1
+			fileset ( dir: 'test', includes: '**/*Test.java' )
+		}
+		formatter ( type: 'plain' )
+		formatter ( type: 'xml' )
+		formatter ( type: 'html' )
+	}
+}
+
+target ( testReport : 'generates html test report') {
+	mkdir ( dir: 'reports/htmlunit.dev/html')
+	ant.junitreport ( todir:'reports/htmlunit.dev/html' ) {
+		fileset ( dir: 'reports/htmlunit.dev', includes: 'TEST-*.xml' )
+		report ( format: 'frames', todir: 'reports/htmlunit.dev/html' )
+	}
+}
+
+// set the default target, called when "gant" is invoked from the command line without a specified target
+setDefaultTarget( gwtc )

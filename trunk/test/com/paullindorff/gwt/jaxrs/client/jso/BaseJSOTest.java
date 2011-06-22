@@ -16,6 +16,12 @@ public class BaseJSOTest extends GWTTestCase {
 	}
 
 	@Test
+	public void testRemoveMapWrapper() {
+		TestResult result = tests.testRemoveMapWrapper();
+		assertTrue(result.getMessage(), result.isPassed());
+	}
+
+	@Test
 	public void testIsObject() {
 		TestResult result = tests.testIsObject();
 		assertTrue(result.getMessage(), result.isPassed());

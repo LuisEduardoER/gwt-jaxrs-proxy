@@ -88,17 +88,35 @@ public abstract class BaseJSO extends JavaScriptObject
 	 */
 	private static String trimPrefixes(String jsonString, String[]... prefixLists)
 	{
+		String result = jsonString;
 		for (String[] prefixes : prefixLists) {
 			for (String prefix : prefixes) {
 				if (jsonString.startsWith(prefix)) {
 					// remove beginning prefix and associated trailing brace
-					jsonString = jsonString.substring(prefix.length(), jsonString.length()-1);
+					result = jsonString.substring(prefix.length(), jsonString.length()-1);
 					break;
 				}
 			}
 		}
-		return jsonString;
+		return result;
 	}
+
+	/**
+	 * Trims off the specified wrapper container around a JAXB 'listified' Map, if it exists
+	 * @param json
+	 * @param wrapper
+	 * @return
+	 */
+	public static final native String removeMapWrapper(String json, String wrapper) /*-{
+		if (json.match('\\{"' + wrapper + '":\\[.*}}]}')) {			// multi-element list
+			// the 'new RegExp(...,"g") forces JavaScript to replace all instead of just the first one
+			return json.replace(new RegExp('\\{"' + wrapper + '":\\[',"g"), '[').replace(new RegExp('}}]}',"g"), '}}]');
+		} else if (json.match('{\\"' + wrapper + '\\":{.*}}}')) { 	// single element list
+			return json.replace(new RegExp('{"' + wrapper + '":',"g"), '').replace(new RegExp('}}}',"g"), '}}');
+		} else {
+			return json;
+		}
+	}-*/;
 
 	/**
 	 * Returns this object as a JSON string

@@ -1,6 +1,7 @@
 package com.paullindorff.gwt.jaxrs.client.proxy;
 
-import com.google.gwt.core.client.GWT;
+import java.util.logging.Logger;
+
 import com.google.gwt.http.client.RequestBuilder;
 import com.google.gwt.http.client.RequestBuilder.Method;
 import com.google.gwt.http.client.RequestCallback;
@@ -10,6 +11,8 @@ import com.google.gwt.user.client.rpc.AsyncCallback;
 
 public abstract class RESTResourceProxy
 {
+	private static final Logger logger = Logger.getLogger(RESTResourceProxy.class.getName());
+
 	private static final String HEADER_ACCEPT = "Accept";
 	private static final String HEADER_CONTENT_TYPE = "Content-Type";
 	private static final String MEDIA_TYPE = "application/json";
@@ -44,13 +47,13 @@ public abstract class RESTResourceProxy
 			// add request body, if specified
 			if (body != null)
 			{
-				GWT.log("added request entity body: " + body);
+				logger.fine("added request entity body: " + body);
 				builder.setHeader("Content-Type", MEDIA_TYPE);
 				builder.setRequestData(body);
 			}
 
 			// send the request
-			GWT.log("sending request: " + method + " " + path + " to " + target.getBaseURL() + "; " + HEADER_ACCEPT + ": " + builder.getHeader(HEADER_ACCEPT) + (body == null ? "" : "; " +HEADER_CONTENT_TYPE + ": " + builder.getHeader(HEADER_CONTENT_TYPE)));
+			logger.info("sending request: " + method + " " + path + " to " + target.getBaseURL() + "; " + HEADER_ACCEPT + ": " + builder.getHeader(HEADER_ACCEPT) + (body == null ? "" : "; " +HEADER_CONTENT_TYPE + ": " + builder.getHeader(HEADER_CONTENT_TYPE)));
 			builder.send();
 		} catch (RequestException re)
 		{

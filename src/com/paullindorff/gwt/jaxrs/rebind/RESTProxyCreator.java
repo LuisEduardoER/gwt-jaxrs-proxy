@@ -4,6 +4,7 @@ import java.io.PrintWriter;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Logger;
 
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -15,11 +16,14 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 
-import com.google.gwt.core.client.GWT;
+import org.jboss.resteasy.annotations.Form;
+
 import com.google.gwt.core.ext.GeneratorContext;
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.UnableToCompleteException;
+import com.google.gwt.core.ext.typeinfo.HasAnnotations;
 import com.google.gwt.core.ext.typeinfo.JClassType;
+import com.google.gwt.core.ext.typeinfo.JField;
 import com.google.gwt.core.ext.typeinfo.JMethod;
 import com.google.gwt.core.ext.typeinfo.JPackage;
 import com.google.gwt.core.ext.typeinfo.JParameter;
@@ -100,7 +104,7 @@ public class RESTProxyCreator
 		}
 
 		// create the REST proxy class methods
-		generateRESTProxyMethods(restSrcWriter, typeOracle, rootPath, resourceToRESTMap);
+		generateRESTProxyMethods(restSrcWriter, typeOracle, rootPath, resourceToRESTMap, logger);
 
 		// commit the REST proxy class
 		restSrcWriter.commit(logger);
@@ -128,19 +132,20 @@ public class RESTProxyCreator
 	 * @param rootPath
 	 * @param resourceToRESTMap
 	 */
-	private void generateRESTProxyMethods(SourceWriter writer, TypeOracle typeOracle, String rootPath, Map<JMethod, JMethod> resourceToRESTMap)
+	private void generateRESTProxyMethods(SourceWriter writer, TypeOracle typeOracle, String rootPath, Map<JMethod, JMethod> resourceToRESTMap, TreeLogger logger)
 	{
 		JMethod[] resourceMethods = resourceInterface.getOverridableMethods();
 		for (JMethod resourceMethod : resourceMethods)
 		{
 			JMethod restMethod = resourceToRESTMap.get(resourceMethod);
-			assert (restMethod != null);
 
-			// erase type parameterization
-			resourceMethod = GWTSourceUtils.getGenericVersion(resourceMethod);
-
-			// for each resource method, generate the proxy method
-			generateRESTProxyMethod(writer, typeOracle, rootPath, resourceMethod, restMethod);
+			if (restMethod != null) {				// if restMethod wasn't defined, we don't create a proxy for it
+				// erase type parameterization
+				resourceMethod = GWTSourceUtils.getGenericVersion(resourceMethod);
+	
+				// for each resource method, generate the proxy method
+				generateRESTProxyMethod(writer, typeOracle, rootPath, resourceMethod, restMethod, logger);
+			}
 		}
 	}
 
@@ -152,8 +157,10 @@ public class RESTProxyCreator
 	 * @param resourceMethod
 	 * @param restMethod
 	 */
-	private void generateRESTProxyMethod(SourceWriter writer, TypeOracle typeOracle, String rootPath, JMethod resourceMethod, JMethod restMethod)
+	private void generateRESTProxyMethod(SourceWriter writer, TypeOracle typeOracle, String rootPath, JMethod resourceMethod, JMethod restMethod, TreeLogger logger)
 	{
+		//NOTE...to log anything in this proxy: writer.println("Logger.getLogger(this.getClass().getName()).fine(\"STRING_TO_LOG\");");
+
 		// blank line before the method definition
 		writer.println();
 
@@ -229,61 +236,62 @@ public class RESTProxyCreator
 		JType requestBodyType = null;
 		for (JParameter param: resourceMethod.getParameters())
 		{
-			// check for a primitive parameter type
-			boolean paramTypeIsPrimitive = (param.getType().isPrimitive() != null);
+			TreeLogger paramLogger = logger.branch(TreeLogger.DEBUG, "processing param: " + param.getName());
 
 			if (param.isAnnotationPresent(PathParam.class))
 			{
-				// replace token specified by the path param with value passed to the method
-				String pathToken = PATH_PARAM_START_DELIM + param.getAnnotation(PathParam.class).value() + PATH_PARAM_END_DELIM;
-
-				writer.print("path = path.replace(\"" + pathToken + "\", ");
-				// handle primitive vs. Object parameter types
-				if (paramTypeIsPrimitive)
-					writer.print("String.valueOf(" + param.getName() + ")");
-				else
-					writer.print("getStringValue(" + param.getName() + ", false)");
-				writer.println(");");
-
+				// use for path token replacement
+				paramLogger.log(TreeLogger.DEBUG, "will be used as a path element");
+				writePathItem(param, null, writer);
 			} else
 			if (param.isAnnotationPresent(QueryParam.class))
 			{
-				// add query param value to the query string
+				// add to the query string
+				paramLogger.log(TreeLogger.DEBUG, "will be used as a query parameter");
 				queryPresent = true;
-				String queryParamName = param.getAnnotation(QueryParam.class).value();
-
-				// check for a null if parameter is not a primitive...if the parameter value is null, don't add the name/value pair to the query string
-				if (!paramTypeIsPrimitive)
-				{
-					writer.println("if (" + param.getName() + " != null) {");
-					writer.indent();
-				}
-
-				writer.print("query.append(");
-				if (needsAmpersand)
-					writer.print("\"&\" + ");
-				else
+				writeQueryItem(param, null, writer, needsAmpersand);
+				if (!needsAmpersand)
 					needsAmpersand = true;
-				
-				writer.print("\"" + queryParamName + "=\" + ");
-				if (paramTypeIsPrimitive)
-					writer.print("String.valueOf(" + param.getName() + ")");
-				else
-					writer.print("getStringValue(" + param.getName() + ", true)");
-				writer.println(");");
-
-				if (!paramTypeIsPrimitive)
-				{
-					writer.outdent();
-					writer.println("}");
-				}
 			} else
 			if (param.isAnnotationPresent(Context.class))
 			{
 				// skip parameters with "Context" annotation, they are strictly for injection of context info (headers, uri information) into the server-side resource
+				paramLogger.log(TreeLogger.DEBUG, "skipping @Context parameter");
+			} else
+			if (param.isAnnotationPresent(Form.class))
+			{
+				// using RESTEasy Form value object; the object's fields are annotated with usage for URI construction
+				TreeLogger formLogger = paramLogger.branch(TreeLogger.DEBUG, "@Form annotation found, unwrapping value object");
+
+				for (JField field: param.getType().isClass().getFields())
+				{
+					formLogger.log(TreeLogger.DEBUG, "processing field: " + field.getName());
+
+					if (field.isAnnotationPresent(PathParam.class))
+					{
+						// use for path token replacement
+						formLogger.log(TreeLogger.DEBUG, "will be used as a path element");
+						writePathItem(field, param, writer);
+					} else
+					if (field.isAnnotationPresent(QueryParam.class))
+					{
+						// add to the query string
+						formLogger.log(TreeLogger.DEBUG, "will be used as a query parameter");
+						queryPresent = true;
+						writeQueryItem(field, param, writer, needsAmpersand);
+						if (!needsAmpersand)
+							needsAmpersand = true;
+					} else
+					if (field.isAnnotationPresent(Context.class))
+					{
+						// skip parameters with "Context" annotation, they are strictly for injection of context info (headers, uri information) into the server-side resource
+						formLogger.log(TreeLogger.DEBUG, "skipping @Context field");
+					}
+				}
 			} else
 			{
 				// no annotation present, this object is for the request body
+				paramLogger.log(TreeLogger.DEBUG, "will be used as request body, type is " + param.getType());
 				requestBodyPresent = true;
 				requestBodyType = param.getType();
 				writer.println("requestBody = " + param.getName() + ";");
@@ -478,7 +486,7 @@ public class RESTProxyCreator
 			ResponseReader.class.getCanonicalName(),
 			VoidResponseReader.class.getCanonicalName(),
 			SerializationException.class.getCanonicalName(),
-			GWT.class.getCanonicalName(),
+			Logger.class.getCanonicalName(),
 			jsoPackage.getName() + ".*",							// catch-all import for all JSOs.  JSOs are responsible for writing themselves to JSON if sent as a request body.
 			ResponseReader.class.getPackage().getName() + ".*",		// catch-all import for all ResponseReader proxies
 		};
@@ -671,5 +679,118 @@ public class RESTProxyCreator
 		return (!(parameter.isAnnotationPresent(PathParam.class)
 				|| parameter.isAnnotationPresent(QueryParam.class)
 				|| parameter.isAnnotationPresent(Context.class)));
+	}
+
+	/**
+	 * Writes code that will swap a path placeholder with the item's value
+	 * @param item
+	 * @param writer
+	 * @param parent
+	 */
+	private void writePathItem(HasAnnotations item, HasAnnotations parent, SourceWriter writer)
+	{
+		// get the full item name. if the parent is given, the item is accessed via a getter on the parent; otherwise, the item is accessed directly
+		String itemName = parent == null ? getName(item) : constructGetterCall(getName(parent), getName(item));
+
+		// get the path token to replace from the PathParam annotation
+		String pathToken = PATH_PARAM_START_DELIM + item.getAnnotation(PathParam.class).value() + PATH_PARAM_END_DELIM;
+
+		// start the replace call
+		writer.print("path = path.replace(\"" + pathToken + "\", ");
+
+		// get the item value as a string, using an appropriate method based on whether the item refers to a primitive or an object
+		boolean itemIsPrimitive = (getType(item).isPrimitive() != null);
+		if (itemIsPrimitive)
+			writer.print("String.valueOf(" + itemName + ")");
+		else
+			writer.print("getStringValue(" + itemName + ", false)");
+
+		// close up the replace call
+		writer.println(");");
+	}
+
+	/**
+	 * Writes code that will append the given item to the proxy object's query string
+	 * @param item
+	 * @param writer
+	 * @param needsAmpersand
+	 * @param parent
+	 */
+	private void writeQueryItem(HasAnnotations item, HasAnnotations parent, SourceWriter writer, boolean needsAmpersand)
+	{
+		// get the full item name. if the parent is given, the item is accessed via a getter on the parent; otherwise, the item is accessed directly
+		String itemName = parent == null ? getName(item) : constructGetterCall(getName(parent), getName(item));
+
+		// get the query param name from the QueryParam annotation
+		String queryParamName = item.getAnnotation(QueryParam.class).value();
+
+		// check for a null if parameter is not a primitive...if the parameter value is null, don't add the name/value pair to the query string
+		boolean itemIsPrimitive = (getType(item).isPrimitive() != null);
+		if (!itemIsPrimitive)
+		{
+			writer.println("if (" + itemName + " != null) {");
+			writer.indent();
+		}
+
+		// begin and append call on the proxy stringbuilder
+		writer.print("query.append(");
+		// add an ampersand if needed (if this isn't the first item in the query string)
+		if (needsAmpersand)
+			writer.print("\"&\" + ");
+
+		// write the query parameter name
+		writer.print("\"" + queryParamName + "=\" + ");
+
+		// get the item value as a string, using an appropriate method based on whether the item refers to a primitive or an object
+		if (itemIsPrimitive)
+			writer.print("String.valueOf(" + itemName + ")");
+		else
+			writer.print("getStringValue(" + itemName + ", true)");
+
+		// close up the append call
+		writer.println(");");
+
+		// if the parameter is not a primitive, close up the null check block
+		if (!itemIsPrimitive)
+		{
+			writer.outdent();
+			writer.println("}");
+		}
+	}
+
+	/**
+	 * Extracts the name from JParameter and JField meta-classes, allowing us to use them in a polymorphic manner
+	 * @param item
+	 * @return
+	 */
+	private String getName(Object item) {
+		if (item instanceof JParameter)
+			return ((JParameter)item).getName();
+		if (item instanceof JField)
+			return ((JField)item).getName();
+		return null;
+	}
+
+	/**
+	 * Extracts the type from JParameter and JField meta-classes, allowing us to use them in a polymorphic manner
+	 * @param item
+	 * @return
+	 */
+	private JType getType(Object item) {
+		if (item instanceof JParameter)
+			return ((JParameter)item).getType();
+		if (item instanceof JField)
+			return ((JField)item).getType();
+		return null;
+	}
+
+	/**
+	 * Constructs a call to the getter for the given property on the given object
+	 * @param instanceName
+	 * @param propertyName
+	 * @return
+	 */
+	private String constructGetterCall(String objectName, String propertyName) {
+		return objectName + ".get" + propertyName.substring(0,1).toUpperCase() + propertyName.substring(1) + "()";
 	}
 }

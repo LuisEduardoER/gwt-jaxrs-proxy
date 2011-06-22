@@ -51,42 +51,33 @@ public class RESTInterfaceMapper
 		TreeLogger branch = logger.branch(TreeLogger.DEBUG, "mapping the Resource interface '"+ resourceInterface.getQualifiedSourceName()
 															+ "' to its REST version '" + restInterface.getQualifiedSourceName() + "'", null);
 
-		//TODO: do we need this check?  what if we don't want some resource methods available on the client?
-		if (restMethods.length != resourceMethods.length)
-		{
-			branch.log(TreeLogger.ERROR, "REST interface has different number of overridable methods than the Resource interface");
-			throw new UnableToCompleteException();
-		}
-
 		// put rest methods in a map (signature string -> method object) for retrieval during the method->method mapping step
 		Map<String, JMethod> restMethodMap = new HashMap<String, JMethod>();
 		for (JMethod restMethod: restMethods)
-			restMethodMap.put(GWTSourceUtils.computeInternalSignature(restMethod), restMethod);
+			restMethodMap.put(GWTSourceUtils.computeInternalSignature(restMethod, logger), restMethod);
 
 		// assemble the resource/rest map (resource method object -> rest method object)
 		for (JMethod resourceMethod: resourceMethods)
 		{
 			// compute the corresponding rest method signature from the resource method
-			String restMethodSignature = computeRESTMethodSignature(resourceMethod, httpAuthenticationClass, webServiceTargetClass, asyncCallbackClass);
+			String restMethodSignature = computeRESTMethodSignature(resourceMethod, httpAuthenticationClass, webServiceTargetClass, asyncCallbackClass, logger);
 			// get the rest method from the restMethodMap via the computed signature
 			JMethod restMethod = restMethodMap.get(restMethodSignature);
 
-			if (restMethod == null)
-			{
-				branch.log(TreeLogger.ERROR, "No matching REST method for resourceMethod '" + GWTSourceUtils.computeInternalSignature(resourceMethod) + "'; expecting '" + restMethodSignature + "'");
-				throw new UnableToCompleteException();
+			if (restMethod == null) {
+				branch.log(TreeLogger.DEBUG, "No matching REST method for resourceMethod '" + GWTSourceUtils.computeInternalSignature(resourceMethod, logger) + "', skipping");
+			} else {
+				// check that the rest method return type is void
+				JType restMethodReturnType = restMethod.getReturnType();
+				if (restMethodReturnType != JPrimitiveType.VOID)
+				{
+					branch.log(TreeLogger.ERROR, "REST method must have a return type of 'void': " + GWTSourceUtils.computeInternalSignature(resourceMethod, logger));
+					throw new UnableToCompleteException();
+				}
+	
+				// add the method mapping
+				resourceToRESTMap.put(resourceMethod, restMethod);
 			}
-
-			// check that the rest method return type is void
-			JType restMethodReturnType = restMethod.getReturnType();
-			if (restMethodReturnType != JPrimitiveType.VOID)
-			{
-				branch.log(TreeLogger.ERROR, "REST method must have a return type of 'void': " + GWTSourceUtils.computeInternalSignature(resourceMethod));
-				throw new UnableToCompleteException();
-			}
-
-			// add the method mapping
-			resourceToRESTMap.put(resourceMethod, restMethod);
 		}
 
 		return resourceToRESTMap;
@@ -100,12 +91,11 @@ public class RESTInterfaceMapper
 	 * @param asyncCallbackClass
 	 * @return
 	 */
-	private String computeRESTMethodSignature(JMethod resourceMethod, JClassType httpAuthenticationClass, JClassType webServiceTargetClass, JClassType asyncCallbackClass)
+	private String computeRESTMethodSignature(JMethod resourceMethod, JClassType httpAuthenticationClass, JClassType webServiceTargetClass, JClassType asyncCallbackClass, TreeLogger logger)
 	{
-	    return GWTSourceUtils.computeInternalSignature(resourceMethod)
-	    + "/" + httpAuthenticationClass.getQualifiedSourceName()
-	    + "/" + webServiceTargetClass.getQualifiedSourceName()
-	    + "/" + asyncCallbackClass.getQualifiedSourceName();
-
+	    return GWTSourceUtils.computeInternalSignature(resourceMethod, logger)
+		    + "/" + httpAuthenticationClass.getQualifiedSourceName()
+		    + "/" + webServiceTargetClass.getQualifiedSourceName()
+	    	+ "/" + asyncCallbackClass.getQualifiedSourceName();
 	}
 }

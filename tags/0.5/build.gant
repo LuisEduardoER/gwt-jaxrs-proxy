@@ -1,0 +1,158 @@
+// required: Java 6, GWT 2.x, JUnit 4
+
+// *** system environment variables
+final javaHome = System.getenv().JAVA_HOME
+final gwtHome = System.getenv().GWT_HOME
+final junitHome = System.getenv().JUNIT_HOME
+
+if (!javaHome) {
+	println 'ERROR: JAVA_HOME is not set'
+	System.exit(1)
+}
+
+if (!gwtHome) {
+	println 'ERROR: GWT_HOME is not set'
+	System.exit(1)
+}
+
+if (!junitHome) {
+	println 'ERROR: JUNIT_HOME is not set'
+	System.exit(1)
+}
+
+println ''
+println "using JAVA_HOME:\t$javaHome"
+println "using GWT_HOME:\t\t$gwtHome"
+println "using JUNIT_HOME:\t$junitHome"
+println ''
+
+// *** project directories
+final sourceDirectory = 'src'
+final testDirectory = 'test'
+final libDirectory = 'lib'
+final outputDirectory = 'war/WEB-INF/classes'
+final testReportDirectory = 'reports'
+
+// *** convenience methods
+def performCompilation = { sourceDir, outputDir, classpathId ->
+	mkdir ( dir : outputDir )
+
+	javac ( srcdir : sourceDir, destdir : outputDir, fork : 'true', compiler: 'modern' , debug: 'true', failonerror : 'true', includeantruntime : 'false', source : '1.6', target : '1.6' ) {
+		classpath { path ( refid : classpathId ) }
+	}
+}
+
+def performJSCrossCompilation = { moduleName, outputGeneratedSource ->
+	java ( fork: 'true', failonerror: 'true', classname: 'com.google.gwt.dev.Compiler' ) {
+		classpath { path ( refid : compileClasspath ) }
+		jvmarg ( value: '-Xmx256M' )
+		if ( outputGeneratedSource )
+			arg ( line: '-gen src-generated' )
+		arg ( value: moduleName )
+	}
+}
+
+def runJUnit = { outputDir, args, generateHTML ->
+	mkdir ( dir : outputDir )
+
+	ant.junit ( fork: 'true', printsummary: 'true', haltonfailure: 'true' ) {
+		jvmarg (value: '-Xmx256M')
+		sysproperty ( key: 'gwt.args', value: args )
+		sysproperty ( key: 'java.awt.headless', value: 'true' )
+		classpath { path ( refid: testClasspath ) }
+		batchtest ( todir: outputDir ) {
+			fileset ( dir: 'test', includes: '**/*Test.java' )
+		}
+		formatter ( type: 'plain' )
+		formatter ( type: 'xml' )
+	}
+
+	if ( generateHTML ) {
+		htmlReportDir = "$outputDir/html"
+		mkdir ( dir: htmlReportDir)
+
+		ant.junitreport ( todir : htmlReportDir ) {
+			fileset ( dir: outputDir, includes: 'TEST-*.xml' )
+			report ( format: 'frames', todir: htmlReportDir )
+		}
+	}
+}
+
+// *** targets
+target ( init : '' ) {	// targets with blank descriptions are internal-only, do not appear in the command line directory
+
+	gwtClasspath = 'gwtClasspath'
+	path ( id: gwtClasspath ) {
+		path ( location : "$gwtHome/gwt-user.jar" )
+		fileset ( dir: "$gwtHome", includes: 'gwt-dev*.jar' )
+	}
+
+	junitClasspath = 'junitClasspath'
+	path ( id: junitClasspath ) {
+		fileset ( dir: "$junitHome", includes: 'junit*.jar' )
+	}
+
+	compileClasspath = 'compileClasspath'
+	path ( id: compileClasspath ) {
+		path ( location : sourceDirectory )
+		path ( location : outputDirectory )
+		path ( refid : gwtClasspath )
+
+		fileset ( dir: "war/WEB-INF/lib", includes: '**/*.jar' )
+	}
+
+	testClasspath = 'testClasspath'
+	path ( id: testClasspath ) {
+		path ( location : 'test' )
+		path ( refid : compileClasspath )
+		path ( refid : junitClasspath )
+	}
+}
+
+target ( clean : 'removes existing complied code to facilitate a fresh build' ) {
+	delete ( dir : outputDirectory, failonerror: 'false' )
+	delete ( dir : testReportDirectory, failonerror: 'false' )
+	delete ( dir : 'war/com.paullindorff.gwt.jaxrs.client.test.RunTests.JUnit', failonerror: 'false' )
+	delete ( dir : 'war/runtests', failonerror: 'false' )
+	delete ( dir : 'war/WEB-INF/deploy/com.paullindorff.gwt.jaxrs.client.test.RunTests.JUnit', failonerror: 'false' )
+	delete ( dir : 'war/WEB-INF/deploy/runtests', failonerror: 'false' )
+	delete ( dir : 'www-test', failonerror: 'false' )
+}
+
+target ( compileJava : 'compiles java source code' ) {
+	depends ( init )
+
+	copy ( todir : outputDirectory, includeemptydirs : 'false' ) {
+		fileset ( dir : sourceDirectory, excludes : '**/*.launch, **/*.java' )
+	}
+
+	performCompilation ( sourceDirectory, outputDirectory, compileClasspath )
+}
+
+target ( compileGWT : 'cross-compiles module to javascript via the GWT compiler' ) {
+	depends ( compileJava )
+
+	mkdir ( dir: 'war/WEB-INF/lib' )
+	copy ( todir: 'war/WEB-INF/lib', file: "${gwtHome}/gwt-servlet.jar" )
+
+	performJSCrossCompilation ( 'com.paullindorff.gwt.jaxrs.client.test.runtests', false )
+}
+
+target ( compileTests : 'compiles unit test code' ) {
+	depends ( compileJava )
+
+	performCompilation ( testDirectory, outputDirectory, testClasspath )
+}
+
+target ( runTestsDev : 'runs unit tests in development mode' ) {
+	depends ( compileTests )
+	runJUnit ( "$testReportDirectory/htmlunit.dev", '-logLevel WARN', true )
+}
+
+target ( runTestsProd : 'runs unit tests in production mode' ) {
+	depends ( compileTests )
+	runJUnit ( "$testReportDirectory/htmlunit.prod", '-prod -logLevel WARN -out www-test', true )
+}
+
+// set the default target, called when "gant" is invoked from the command line without a specified target
+setDefaultTarget( compileGWT )

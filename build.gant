@@ -32,6 +32,12 @@ final testDirectory = 'test'
 final libDirectory = 'lib'
 final outputDirectory = 'war/WEB-INF/classes'
 final testReportDirectory = 'reports'
+final distributionDirectory = 'dist'
+
+// *** other config options
+final projectName = 'gwt-jaxrs-proxy'
+final version = '0.5'
+final todoToken = 'TODO:'
 
 // *** convenience methods
 def performCompilation = { sourceDir, outputDir, classpathId ->
@@ -110,6 +116,7 @@ target ( init : '' ) {	// targets with blank descriptions are internal-only, do 
 }
 
 target ( clean : 'removes existing complied code to facilitate a fresh build' ) {
+	delete ( dir : distributionDirectory, failonerror: 'false' )
 	delete ( dir : outputDirectory, failonerror: 'false' )
 	delete ( dir : testReportDirectory, failonerror: 'false' )
 	delete ( dir : 'war/com.paullindorff.gwt.jaxrs.client.test.RunTests.JUnit', failonerror: 'false' )
@@ -152,6 +159,34 @@ target ( runTestsDev : 'runs unit tests in development mode' ) {
 target ( runTestsProd : 'runs unit tests in production mode' ) {
 	depends ( compileTests )
 	runJUnit ( "$testReportDirectory/htmlunit.prod", '-prod -logLevel WARN -out www-test', true )
+}
+
+target ( dist : 'creates distribution jar' ) {
+	depends ( compileGWT )
+	
+	mkdir ( dir: distributionDirectory )
+	jar ( destfile : "$distributionDirectory/${projectName}-${version}.jar" ) {
+		manifest {
+			attribute ( name : 'Specification-Title', value : projectName )
+	    	attribute ( name : 'Specification-Vendor', value : 'Paul Lindorff' )
+		}
+		fileset ( dir : sourceDirectory, excludes : '**/*.launch' )
+		fileset ( dir : outputDirectory )
+	}
+}
+
+target ( listTodos : "lists all TODO tasks found in the source tree (comments containing '$todoToken')" ) {
+	new File('.').eachFileRecurse(groovy.io.FileType.FILES) { file ->
+		if (file.name.endsWith('.java')) {
+			def lineNum = 1
+			file.eachLine { line ->
+				if (line.contains(todoToken)) {
+					println "$file.name,$lineNum: ${line.substring(line.indexOf(todoToken)+todoToken.length()).trim()}"
+				}
+				lineNum++
+			}
+		}
+	}
 }
 
 // set the default target, called when "gant" is invoked from the command line without a specified target

@@ -2,7 +2,7 @@
 
 = Introduction =
 
-A bit of prep work is required in order to get started, but once the basic structure is in place, adding additional representations and resources should be simple.
+A bit of prep work is required in order to get started, but once the basic pattern is understood, adding additional representations and resources should be simple.
 
 Terminology:
   * *Representation*: the client-facing version of an object
@@ -98,7 +98,34 @@ public class ThingResourceImpl implements ThingResource {
 }
 }}}
 
-===Create a client-side REST interface===
+===Create a client-side JSO for the representation ===
+{{{
+public class ThingJSO extends BaseJSO implements Thing {
+   protected ThingJSO() {} // required by GWT
+
+   public static Thing create(String json) {
+      return (ThingJSO)createObject(json);
+   }
+
+   public final Integer getId() {
+      return getInteger("id");
+   }
+
+   public final void setId(Integer id) {
+      setInteger("id", id);
+   }
+
+   public final String getName() {
+      return getString("name");
+   }
+
+   public final void setName(String name) {
+      setString("name", name);
+   }
+}
+}}}
+
+===Create a client-side REST interface for the resource ===
 _NOTE_ the auth, target, and callback parameters will be explained shortly
 {{{
 public interface ThingResourceREST {
@@ -108,4 +135,40 @@ public interface ThingResourceREST {
 
    public void updateThing(Integer id, Thing thing, HTTPAuthentication auth, WebServiceTarget target, AsyncCallback<Thing> callback);
 }
+}}}
+
+===Use it!===
+{{{
+// first, some setup...
+// create the REST interface proxy
+ThingResourceREST things = GWT.create(ThingResource.class);
+// create an instance of HTTPAuthentication
+// currently only BasicAuthentication is available, but NoAuthentication and DigestAuthentication should be trivial to add
+HTTPAuthentication auth = new BasicAuthentication("myuser", "mypass");
+// create an instance of WebServiceTarget
+// you can choose from HostModeProxyTarget, for going against hosted mode, or WebServiceTarget, for going against a 'live' web service
+WebServiceTarget target = new HostModeProxyTarget("/mywebservice");
+
+Thing newOne = new ThingJSO();
+newOne.setName("my new thing");
+
+things.createThing(newOne, auth, target, new AsyncCallback<String>() {
+   public void onSuccess(String result) {
+      GWT.log("created a thing! it can be found at: " + result);
+   }
+
+   public void onFailure(Throwable caught) {
+      GWT.log("whoops! something bad happened...", caught);
+   }
+});
+
+Thing thing = things.getThing(1, auth, target, new AsyncCallback<Thing>() {
+   public void onSuccess(Thing result) {
+      GWT.log("found a thing: " + result);
+   }
+
+   public void onFailure(Throwable caught) {
+      GWT.log("whoops! something bad happened...", caught);
+   }
+});
 }}}

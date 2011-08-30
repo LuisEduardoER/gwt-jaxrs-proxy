@@ -10,35 +10,35 @@ Terminology:
 
 = Details =
 
-1. Add gwt-jaxrs-proxy to your classpath, and import it into your GWT project
+===Add gwt-jaxrs-proxy to your classpath, and import it into your GWT project===
 {{{
 ...
    <inherits name="com.paullindorff.gwt.jaxrs.gwt-jaxrs-proxy"/>
 ...
 }}}
 
-2. Create a representation interface for the desired object
+===Create a representation interface for the desired object===
 {{{
 package com.mystuff.shared.representation;
 
 public interface Thing {
-   public Integer getThingId();
-   public void setThingId(Integer thingId);
-   public String getThingName();
-   public void setThingName(String thingName);
+   public Integer getId();
+   public void setId(Integer id);
+   public String getName();
+   public void setName(String name);
 }
 }}}
 
-3. Create a JAX-RS annotated resource interface for the desired object
+===Create a JAX-RS annotated resource interface for the desired object===
 {{{
 package com.mystuff.shared.resource;
 
 @Path("/things")
 public interface ThingResource {
    @GET
-   @Path("/{thingId}")
+   @Path("/{id}")
    @Produces(MediaType.APPLICATION_JSON)
-   public Thing getThing(@PathParam("thingId") Integer thingId);
+   public Thing getThing(@PathParam("id") Integer id);
 
    @POST
    @Path("/")
@@ -46,16 +46,66 @@ public interface ThingResource {
    public Response createThing(Thing thing, @Context UriInfo uriInfo);
 
    @PUT
-   @Path("/{thingId}")
+   @Path("/{id}")
    @Consumes(MediaType.APPLICATION_JSON)
-   public void updateThing(@PathParam("thingId") Integer thingId, Thing thing);
+   public void updateThing(@PathParam("id") Integer id, Thing thing);
 }
 }}}
 
-4. Create a GWT module descriptor for your shared interfaces, and make sure the descriptor and interfaces are visible to both your server and client projects
+===Create a GWT module descriptor for your shared interfaces===
+_NOTE_ make sure the descriptor and interfaces are visible to both your server and client projects
 {{{
 <?xml version="1.0" encoding="UTF-8"?>
 <module rename-to="mystuff-shared">
    <source path="shared"/>
 </module>
+}}}
+
+===Create a server-side implementation of your representation and resource===
+{{{
+@XmlRootElement
+public class ThingImpl implements Thing {
+   private Integer id;
+   private Integer name;
+
+   @XmlElement
+   public Integer getId() ...
+   public void setId(Integer id) ...
+
+   @XmlElement
+   public String getName() ...
+   public void setName(String name) ...
+}
+
+public class ThingResourceImpl implements ThingResource {
+   public Thing getThing(@PathParam("id") Integer id) {
+      // perform lookup from data store
+      return thingIFound;
+   }
+
+   public Response createThing(Thing thing, @Context UriInfo uriInfo) {
+      // validate the incoming Thing representation
+      // store the Thing representation in the data store
+      Integer id = thing.getId();  // assuming a generated id
+      URI uri = uriInfo.getAbsolutePathBuilder().path(id).build();
+      return Response.created(uri).build(); // return a "201-created" response
+   }
+
+   public void updateThing(@PathParam("id") Integer id, Thing thing) {
+      // verify the id in the path and the id in the incoming representation match
+      // update the Thing in the data store with the incoming Thing representation
+   }
+}
+}}}
+
+===Create a client-side REST interface===
+_NOTE_ the auth, target, and callback parameters will be explained shortly
+{{{
+public interface ThingResourceREST {
+   public void getThing(Integer id, HTTPAuthentication auth, WebServiceTarget target, AsyncCallback<Thing> callback);
+
+   public void createThing(Thing thing, HTTPAuthentication auth, WebServiceTarget target, AsyncCallback<Thing> callback);
+
+   public void updateThing(Integer id, Thing thing, HTTPAuthentication auth, WebServiceTarget target, AsyncCallback<Thing> callback);
+}
 }}}

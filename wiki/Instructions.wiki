@@ -10,10 +10,22 @@ Terminology:
 
 = Details =
 
-===Add gwt-jaxrs-proxy to your classpath, and import it into your GWT project===
+===Import gwt-jaxrs-proxy into your GWT project and configure it===
 {{{
 ...
    <inherits name="com.paullindorff.gwt.jaxrs.gwt-jaxrs-proxy"/>
+
+   <!-- Generate proxy code for REST-interfaces					  -->
+   <define-configuration-property	name="sst.restInterfacePackage"	is-multi-valued="false" />
+   <set-configuration-property		name="sst.restInterfacePackage" value="com.mystuff.client.rpc.rest" />
+
+   <define-configuration-property	name="sst.jsoPackage" is-multi-valued="false" />
+   <set-configuration-property		name="sst.jsoPackage" value="com.mystuff.client.jso" />
+
+   <generate-with class="com.paullindorff.gwt.jaxrs.rebind.RESTInterfaceProxyGenerator">
+      <when-type-assignable class="com.mystuff.shared.resource.WebServiceResource" />
+   </generate-with>
+
 ...
 }}}
 
@@ -29,12 +41,20 @@ public interface Thing {
 }
 }}}
 
+===Create a marker interface for your shared resources===
+{{{
+package com.mystuff.shared.resource;
+
+public interface WebServiceResource {
+}
+}}}
+
 ===Create a JAX-RS annotated resource interface for the desired object===
 {{{
 package com.mystuff.shared.resource;
 
 @Path("/things")
-public interface ThingResource {
+public interface ThingResource extends WebServiceResource {
    @GET
    @Path("/{id}")
    @Produces(MediaType.APPLICATION_JSON)
@@ -100,6 +120,8 @@ public class ThingResourceImpl implements ThingResource {
 
 ===Create a client-side JSO for the representation ===
 {{{
+package com.mystuff.client.jso;
+
 public class ThingJSO extends BaseJSO implements Thing {
    protected ThingJSO() {} // required by GWT
 
@@ -128,6 +150,8 @@ public class ThingJSO extends BaseJSO implements Thing {
 ===Create a client-side REST interface for the resource ===
 _NOTE_ the auth, target, and callback parameters will be explained shortly
 {{{
+package com.mystuff.client.rpc.rest;
+
 public interface ThingResourceREST {
    public void getThing(Integer id, HTTPAuthentication auth, WebServiceTarget target, AsyncCallback<Thing> callback);
 

@@ -1,4 +1,4 @@
-#summary Usage instructions, with examples.
+#summary Usage instructions, by example.
 
 = Introduction =
 

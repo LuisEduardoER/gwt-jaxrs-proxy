@@ -2,7 +2,7 @@
 
 = Introduction =
 
-A bit of prep work is required in order to get started, but once the basic pattern is understood, adding additional representations and resources should be simple.
+A bit of prep work is required in order to get started; once the basic pattern is understood, however, adding additional representations and resources should be simple.
 
 Terminology:
   * *Representation*: the client-facing version of an object

@@ -23,6 +23,7 @@ Terminology:
    <define-configuration-property	name="sst.jsoPackage" is-multi-valued="false" />
    <set-configuration-property		name="sst.jsoPackage" value="com.mystuff.client.jso" />
 
+   <!-- tell GWT that anything type-assignable to the marker resource interface should have a proxy generated in its place -->
    <generate-with class="com.paullindorff.gwt.jaxrs.rebind.RESTInterfaceProxyGenerator">
       <when-type-assignable class="com.mystuff.shared.resource.WebServiceResource" />
    </generate-with>

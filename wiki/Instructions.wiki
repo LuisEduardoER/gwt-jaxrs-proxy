@@ -15,10 +15,11 @@ Terminology:
 ...
    <inherits name="com.paullindorff.gwt.jaxrs.gwt-jaxrs-proxy"/>
 
-   <!-- Generate proxy code for REST-interfaces					  -->
+   <!-- point the proxy generator at the package containing your REST interfaces -->
    <define-configuration-property	name="sst.restInterfacePackage"	is-multi-valued="false" />
    <set-configuration-property		name="sst.restInterfacePackage" value="com.mystuff.client.rpc.rest" />
 
+   <!-- point the proxy generator at the package containing your JSOs -->
    <define-configuration-property	name="sst.jsoPackage" is-multi-valued="false" />
    <set-configuration-property		name="sst.jsoPackage" value="com.mystuff.client.jso" />
 
